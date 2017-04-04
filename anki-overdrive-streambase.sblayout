@@ -1,6 +1,118 @@
 <?xml version="1.0" encoding="UTF-8"?><application-layout>
-    <component name="InputStream">
-        <param name="gui:x" value="-433"/>
-        <param name="gui:y" value="-63"/>
+    <component name="StartStream">
+        <param name="gui:x" value="-2040"/>
+        <param name="gui:y" value="1095"/>
+    </component>
+    <component name="Settings">
+        <param name="gui:x" value="-1537"/>
+        <param name="gui:y" value="1219"/>
+        <param name="gui:width" value="80"/>
+        <param name="gui:height" value="56"/>
+    </component>
+    <component name="Accelerate">
+        <param name="gui:x" value="-578"/>
+        <param name="gui:y" value="1074"/>
+    </component>
+    <component name="AntiCollsion">
+        <param name="gui:x" value="-897"/>
+        <param name="gui:y" value="988"/>
+    </component>
+    <component name="Brake">
+        <param name="gui:x" value="-777"/>
+        <param name="gui:y" value="978"/>
+    </component>
+    <component name="CreateKafkaMessage">
+        <param name="gui:x" value="-240"/>
+        <param name="gui:y" value="1064"/>
+    </component>
+    <component name="Deserializer">
+        <param name="gui:x" value="-1224"/>
+        <param name="gui:y" value="998"/>
+    </component>
+    <component name="Iterate">
+        <param name="gui:x" value="-979"/>
+        <param name="gui:y" value="988"/>
+    </component>
+    <component name="Join">
+        <param name="gui:x" value="-1624"/>
+        <param name="gui:y" value="994"/>
+        <param name="gui:bends:2" value="-1664,1125;-1642,1034"/>
+    </component>
+    <component name="KafkaConsumer">
+        <param name="gui:x" value="-1527"/>
+        <param name="gui:y" value="994"/>
+    </component>
+    <component name="KafkaProducer">
+        <param name="gui:x" value="32"/>
+        <param name="gui:y" value="1250"/>
+        <param name="gui:bends:1" value="-16,1104;22,1270"/>
+        <param name="gui:bends:2" value="-1642,1236;-1618,1339;-874,1339;-862,1290"/>
+    </component>
+    <component name="PositionUpdateFilter">
+        <param name="gui:x" value="-1362"/>
+        <param name="gui:y" value="998"/>
+        <param name="gui:bends:1" value="-1411,1014;-1409,1028"/>
+    </component>
+    <component name="QueryConsumerCommand">
+        <param name="gui:x" value="-1781"/>
+        <param name="gui:y" value="984"/>
+        <param name="gui:bends:1" value="-1860,1115;-1836,1014"/>
+    </component>
+    <component name="QueryKafkaTopic">
+        <param name="gui:x" value="-1781"/>
+        <param name="gui:y" value="1095"/>
+    </component>
+    <component name="QueryMaxSpeed">
+        <param name="gui:x" value="-681"/>
+        <param name="gui:y" value="1074"/>
+    </component>
+    <component name="QueryProducerCommand">
+        <param name="gui:x" value="-1781"/>
+        <param name="gui:y" value="1206"/>
+        <param name="gui:bends:1" value="-1873,1135;-1849,1236"/>
+    </component>
+    <component name="Serializer">
+        <param name="gui:x" value="-377"/>
+        <param name="gui:y" value="1064"/>
+    </component>
+    <component name="Speedup">
+        <param name="gui:x" value="-777"/>
+        <param name="gui:y" value="1074"/>
+        <param name="gui:bends:1" value="-826,1028;-808,1104"/>
+    </component>
+    <component name="Split">
+        <param name="gui:x" value="-1079"/>
+        <param name="gui:y" value="998"/>
+    </component>
+    <component name="Split2">
+        <param name="gui:x" value="-118"/>
+        <param name="gui:y" value="1064"/>
+    </component>
+    <component name="Split3">
+        <param name="gui:x" value="-1949"/>
+        <param name="gui:y" value="1095"/>
+    </component>
+    <component name="Union">
+        <param name="gui:x" value="-488"/>
+        <param name="gui:y" value="1064"/>
+        <param name="gui:bends:1" value="-514,1008;-498,1084"/>
+    </component>
+    <component name="ErrorConsumer">
+        <param name="gui:x" value="-1362"/>
+        <param name="gui:y" value="1094"/>
+        <param name="gui:bends:1" value="-1434,1034;-1412,1124"/>
+    </component>
+    <component name="ErrorProducer">
+        <param name="gui:x" value="150"/>
+        <param name="gui:y" value="1250"/>
+    </component>
+    <component name="KafkaMessage">
+        <param name="gui:x" value="32"/>
+        <param name="gui:y" value="1054"/>
+    </component>
+    <component name="PositionUpdateMessages">
+        <param name="gui:x" value="-979"/>
+        <param name="gui:y" value="1084"/>
+        <param name="gui:bends:1" value="-1012,1038;-1003,1114"/>
     </component>
 </application-layout>

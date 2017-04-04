@@ -4,8 +4,364 @@
         <annotations>
             <annotation name="hygienic"/>
         </annotations>
-        <stream name="InputStream">
+        <named-schemas>
+            <schema name="Distance">
+                <field name="horizontal" type="double"/>
+                <field name="vertical" type="double"/>
+                <field name="delta" type="double"/>
+                <field name="vehicle" type="string"/>
+            </schema>
+            <schema name="Setting">
+                <field name="key" type="string"/>
+                <field name="value" type="string"/>
+            </schema>
+            <schema name="PositionUpdateMessage">
+                <field name="location" type="int"/>
+                <field name="piece" type="int"/>
+                <field name="offset" type="double"/>
+                <field name="speed" type="int"/>
+                <field name="flags" type="int"/>
+                <field name="lastLaneChangeCmd" type="int"/>
+                <field name="lastExecLaneChangeCmd" type="int"/>
+                <field name="lastDesiredHorizontalSpeed" type="int"/>
+                <field name="lastDesiredSpeed" type="int"/>
+                <field name="distances" type="list">
+                    <element-type type="tuple" value="Distance"/>
+                </field>
+                <field name="position" type="int"/>
+                <field name="lane" type="int"/>
+                <field name="vehicleId" type="string"/>
+                <field name="timestamp" type="timestamp"/>
+            </schema>
+        </named-schemas>
+        <parameter-definitions>
+            <parameter default="localhost:9092" name="kafkahost"/>
+        </parameter-definitions>
+        <table-schemas>
+            <table-schema name="SettingSchema" schema="Setting">
+                <primary-index type="btree">
+                    <field name="key"/>
+                </primary-index>
+            </table-schema>
+        </table-schemas>
+        <data name="Settings" shared="false" source="concrete" type="querytable">
+            <param name="storage-method" value="memory"/>
+            <param name="replicated" value="false"/>
+            <param name="table-schema" value="SettingSchema"/>
+            <param name="truncate" value="false"/>
+            <preload format="csv" mode="text">eb401ef0f82b,400
+ed0c94216553,600
+kafka.topic,cardata-filtered
+kafka.consumer.command,subscribe
+kafka.producer.command,connect</preload>
+        </data>
+        <stream name="StartStream">
             <schema/>
         </stream>
+        <box name="Split3" type="split">
+            <input port="1" stream="StartStream"/>
+            <output port="1" stream="out:Split3_1"/>
+            <output port="2" stream="out:Split3_2"/>
+            <output port="3" stream="out:Split3_3"/>
+            <param name="output-count" value="3"/>
+        </box>
+        <box name="QueryConsumerCommand" type="query">
+            <input port="1" stream="out:Split3_1"/>
+            <output port="1" stream="out:QueryConsumerCommand_1"/>
+            <dataref id="querytable" name="Settings"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="limit" value="1"/>
+            <param name="where-expression" value="key == &quot;kafka.consumer.command&quot;"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="QueryKafkaTopic" type="query">
+            <input port="1" stream="out:Split3_2"/>
+            <output port="1" stream="out:QueryKafkaTopic_1"/>
+            <dataref id="querytable" name="Settings"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="limit" value="1"/>
+            <param name="where-expression" value="key == &quot;kafka.topic&quot;"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="QueryProducerCommand" type="query">
+            <input port="1" stream="out:Split3_3"/>
+            <output port="1" stream="out:QueryProducerCommand_1"/>
+            <dataref id="querytable" name="Settings"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="limit" value="1"/>
+            <param name="where-expression" value="key == &quot;kafka.producer.command&quot;"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="command">value</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="Setting" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="Join" type="join">
+            <input port="1" stream="out:QueryConsumerCommand_1"/>
+            <input port="2" stream="out:QueryKafkaTopic_1"/>
+            <output port="1" stream="out:Join_1"/>
+            <param name="predicate" value="true"/>
+            <param name="join-by" value="tuples"/>
+            <param name="left-window-size" value="1"/>
+            <param name="right-window-size" value="1"/>
+            <param name="expression-name.0" value="command"/>
+            <param name="expression.0" value="input1.value"/>
+            <param name="expression-name.1" value="topic"/>
+            <param name="expression.1" value="input2.value"/>
+            <param name="delta-mode" value="false"/>
+        </box>
+        <box name="KafkaConsumer" type="inputadapter">
+            <input port="1" stream="out:Join_1"/>
+            <output port="1" stream="out:KafkaConsumer_1"/>
+            <output port="2" stream="ErrorConsumer"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.kafka.KafkaConsumer"/>
+            <param name="EnableStatusPort" value="true"/>
+            <param name="brokers" value="${kafkahost}"/>
+            <param name="characterSet" value="UTF-8"/>
+            <param name="defaultBufferSize" value="65536"/>
+            <param name="defaultFetchSize" value="100000"/>
+            <param name="defaultTimeout" value="100000"/>
+            <param name="deserializerType" value="String"/>
+            <param name="enableCommandPort" value="true"/>
+            <param name="enablePassThroughFields" value="false"/>
+            <param name="keyDeserializerType" value="String"/>
+            <param name="keyOutputSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#10;"/>
+            <param name="logLevel" value="WARN"/>
+            <param name="maxFailureCount" value="5"/>
+            <param name="outputSchema" value="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;schema/&gt;&#10;"/>
+            <param name="useDefaultcharacterSet" value="true"/>
+            <param name="userDeserializerClass" value=""/>
+            <param name="userKeyDeserializerClass" value=""/>
+        </box>
+        <output-stream name="ErrorConsumer"/>
+        <box name="PositionUpdateFilter" type="filter">
+            <input port="1" stream="out:KafkaConsumer_1"/>
+            <output port="1" stream="out:PositionUpdateFilter_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="contains(message, &quot;messageId\&quot;:39&quot;)"/>
+        </box>
+        <box name="Deserializer" type="java">
+            <input port="1" stream="out:PositionUpdateFilter_1"/>
+            <output port="1" stream="out:Deserializer_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.operator.jsontuple.JSON2Tuple"/>
+            <param name="enableLooseParsing" value="true"/>
+            <param name="enablePassThroughFields" value="false"/>
+            <param name="enableStatusPort" value="false"/>
+            <param name="jsonFieldName" value="message"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="outputSchema" value="PositionUpdateMessage"/>
+            <param name="passThroughFieldsFieldName" value="PassThroughFields"/>
+            <param name="timestampFormat" value="yyyy-MM-dd'T'HH:mm:ss.SSS"/>
+        </box>
+        <box name="Split" type="split">
+            <input port="1" stream="out:Deserializer_1"/>
+            <output port="1" stream="out:Split_1"/>
+            <output port="2" stream="PositionUpdateMessages"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="PositionUpdateMessages"/>
+        <box name="Iterate" type="iterate">
+            <input port="1" stream="out:Split_1"/>
+            <output port="1" stream="out:Iterate_1"/>
+            <param name="iterate-expr" value="distances"/>
+            <target-list>
+                <item name="input" selection="all"/>
+                <expressions>
+                    <include field="element">each.element</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="AntiCollsion" type="filter">
+            <input port="1" stream="out:Iterate_1"/>
+            <output port="1" stream="out:AntiCollsion_1"/>
+            <output port="2" stream="out:AntiCollsion_2"/>
+            <param name="autogen-nomatch-port" value="true"/>
+            <param name="expression.0" value="element.horizontal &lt; 500 &amp;&amp; element.delta &lt; 0 &amp;&amp; element.vertical &lt;= 34"/>
+            <param name="expression.1" value="true"/>
+        </box>
+        <box name="Brake" type="map">
+            <input port="1" stream="out:AntiCollsion_1"/>
+            <output port="1" stream="out:Brake_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="vehicleId"/>
+                </item>
+                <expressions>
+                    <include field="name">"brake"</include>
+                    <include field="params">list(0.10)</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Speedup" type="filter">
+            <input port="1" stream="out:AntiCollsion_2"/>
+            <output port="1" stream="out:Speedup_1"/>
+            <param name="autogen-nomatch-port" value="false"/>
+            <param name="expression.0" value="element.horizontal &gt; 700"/>
+        </box>
+        <box name="QueryMaxSpeed" type="query">
+            <input port="1" stream="out:Speedup_1"/>
+            <output port="1" stream="out:QueryMaxSpeed_1"/>
+            <dataref id="querytable" name="Settings"/>
+            <param name="operation" value="read"/>
+            <param name="where" value="expression"/>
+            <param name="where-expression" value="key == input1.vehicleId"/>
+            <param name="write-type" value="insert"/>
+            <param name="if-write-fails" value="ignore"/>
+            <param name="no-match-mode" value="output-no-match-null"/>
+            <param name="order-by-direction" value="none"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <item name="current" selection="none"/>
+                <expressions>
+                    <include field="vehicleId">key</include>
+                    <include field="speed">int(value)</include>
+                </expressions>
+            </target-list>
+            <target-list goal-schema="Setting" name="insert">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="update">
+                <item name="input" selection="all"/>
+            </target-list>
+            <target-list goal-schema="Setting" name="no-match">
+                <item name="input" selection="all"/>
+            </target-list>
+        </box>
+        <box name="Accelerate" type="map">
+            <input port="1" stream="out:QueryMaxSpeed_1"/>
+            <output port="1" stream="out:Accelerate_1"/>
+            <target-list>
+                <item name="input" selection="none"/>
+                <expressions>
+                    <include field="name">"accelerate"</include>
+                    <include field="params">list(speed, 0.095)</include>
+                    <include field="vehicleId">vehicleId</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Union" type="union">
+            <input port="1" stream="out:Brake_1"/>
+            <input port="2" stream="out:Accelerate_1"/>
+            <output port="1" stream="out:Union_1"/>
+            <param name="strict" value="false"/>
+        </box>
+        <box name="Serializer" type="java">
+            <input port="1" stream="out:Union_1"/>
+            <output port="1" stream="out:Serializer_1"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.operator.jsontuple.Tuple2JSON"/>
+            <param name="EnableStatusPort" value="false"/>
+            <param name="encodeSubType" value="Map"/>
+            <param name="includeNullFields" value="false"/>
+            <param name="logLevel" value="INFO"/>
+            <param name="outputFieldName" value="message"/>
+            <param name="timestampAsLong" value="true"/>
+            <param name="timestampFormat" value="yyyy-MM-dd'T'HH:mm:ss.SSS"/>
+            <param name="tupleField" value=""/>
+        </box>
+        <box name="CreateKafkaMessage" type="map">
+            <input port="1" stream="out:Serializer_1"/>
+            <output port="1" stream="out:CreateKafkaMessage_1"/>
+            <target-list>
+                <item name="input" selection="none">
+                    <include field="message"/>
+                </item>
+                <expressions>
+                    <include field="topic">vehicleId</include>
+                </expressions>
+            </target-list>
+        </box>
+        <box name="Split2" type="split">
+            <input port="1" stream="out:CreateKafkaMessage_1"/>
+            <output port="1" stream="KafkaMessage"/>
+            <output port="2" stream="out:Split2_2"/>
+            <param name="output-count" value="2"/>
+        </box>
+        <output-stream name="KafkaMessage"/>
+        <box name="KafkaProducer" type="outputadapter">
+            <input port="1" stream="out:Split2_2"/>
+            <input port="2" stream="out:QueryProducerCommand_1"/>
+            <output port="1" stream="ErrorProducer"/>
+            <param name="start:state" value="true"/>
+            <param name="javaclass" value="com.streambase.sb.adapter.kafka.KafkaProducer"/>
+            <param name="EnableMetricsPort" value="false"/>
+            <param name="EnableStatusPort" value="true"/>
+            <param name="acks" value="1"/>
+            <param name="batchSize" value="16384"/>
+            <param name="blockOnBufferFull" value="true"/>
+            <param name="brokers" value="${kafkahost}"/>
+            <param name="bufferMemory" value="33554432"/>
+            <param name="clientId" value=""/>
+            <param name="compressionType" value="None"/>
+            <param name="connectOnStartup" value="true"/>
+            <param name="enableCommandPort" value="true"/>
+            <param name="enablePassThroughFields" value="false"/>
+            <param name="linger" value="0"/>
+            <param name="logLevel" value="WARN"/>
+            <param name="maxRequestSize" value="1048576"/>
+            <param name="metadataFetchTimeout" value="60000"/>
+            <param name="metadataMaxAge" value="300000"/>
+            <param name="receiveBufferBytes" value="32768"/>
+            <param name="reconnectBackoff" value="10"/>
+            <param name="retries" value="0"/>
+            <param name="retryBackoff" value="100"/>
+            <param name="sendBufferBytes" value="131072"/>
+            <param name="timeout" value="30000"/>
+            <param name="userKeySerializerClass" value=""/>
+            <param name="userSerializerClass" value=""/>
+        </box>
+        <output-stream name="ErrorProducer"/>
     </add>
 </modify>
